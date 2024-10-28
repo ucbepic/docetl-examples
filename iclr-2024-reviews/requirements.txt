@@ -1,0 +1,6 @@
+openreview-py
+pandas
+tqdm
+
+# for loading .env
+python-dotenv
