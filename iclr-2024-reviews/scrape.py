@@ -1,3 +1,4 @@
+import json
 import openreview
 import pandas as pd
 import time
@@ -88,15 +89,77 @@ def download_conference_reviews(venue_id, username, password, output_file='revie
         print(f'Error occurred: {str(e)}')
         return None
 
+def read_reviews_to_json(csv_file, reviews_per_doc=100):
+    """
+    Read conference reviews from CSV file and convert to JSON format with batched reviews.
+    
+    Args:
+        csv_file (str): Path to the CSV file containing reviews
+        reviews_per_doc (int): Number of reviews to include in each document
+        
+    Returns:
+        dict: Reviews data in JSON format with batched reviews
+    """
+    try:
+        # Read CSV file
+        df = pd.read_csv(csv_file)
+        
+        # Format each review as a string
+        formatted_reviews = []
+        for _, review in df.iterrows():
+            review_str = (
+                f"Paper {review['paper_id']}: {review['paper_title']}\n\n"
+                f"Rating: {review['rating']}\n"
+                f"Confidence: {review['confidence']}\n\n"
+                f"Summary:\n{review['summary']}\n\n"
+                f"Soundness: {review['soundness']}\n"
+                f"Presentation: {review['presentation']}\n"
+                f"Contribution: {review['contribution']}\n\n"
+                f"Strengths:\n{review['strengths']}\n\n"
+                f"Weaknesses:\n{review['weaknesses']}\n\n"
+                f"Questions:\n{review['questions']}\n\n"
+                f"Ethics Flag: {review['ethics_flag']}\n"
+                "-------------------------------------------\n"
+            )
+            formatted_reviews.append(review_str)
+        
+        # Create batched documents
+        reviews_json = []
+        total_reviews = len(formatted_reviews)
+        num_docs = (total_reviews + reviews_per_doc - 1) // reviews_per_doc  # Ceiling division
+        
+        for doc_idx in range(num_docs):
+            start_idx = doc_idx * reviews_per_doc
+            end_idx = min(start_idx + reviews_per_doc, total_reviews)
+            
+            batch_reviews = formatted_reviews[start_idx:end_idx]
+            reviews_json.append({
+                "content": "\n".join(batch_reviews)
+            })
+            
+        # Save to JSON file
+        with open('reviews.json', 'w') as f:
+            json.dump(reviews_json, f)
+        
+        print(f'Successfully saved {len(reviews_json)} docs to reviews.json')
+        
+    except Exception as e:
+        print(f'Error reading CSV file: {str(e)}')
+        return None
+
+
+
 if __name__ == "__main__":
     # Example usage
     VENUE_ID = 'ICLR.cc/2024/Conference'
     USERNAME = os.getenv('OPENREVIEW_USERNAME')
     PASSWORD = os.getenv('OPENREVIEW_PASSWORD')
     
-    reviews_df = download_conference_reviews(
-        venue_id=VENUE_ID,
-        username=USERNAME,
-        password=PASSWORD,
-        output_file='conference_reviews.csv'
-    )
+    # reviews_df = download_conference_reviews(
+    #     venue_id=VENUE_ID,
+    #     username=USERNAME,
+    #     password=PASSWORD,
+    #     output_file='conference_reviews.csv'
+    # )
+
+    read_reviews_to_json('conference_reviews.csv')

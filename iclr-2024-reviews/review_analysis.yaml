@@ -1,0 +1,105 @@
+datasets:
+  input:
+    type: file
+    path: /Users/shreyashankar/.docetl/files/reviews.json
+    source: local
+default_model: gpt-4o-mini
+operations:
+  - type: map
+    optimize: true
+    name: extract_weaknesses
+    prompt: >-
+      find common weaknesses in the paper reviews in this document:
+
+
+      {{ input.content }}
+
+
+      make sure the weaknesses are common across multiple different submissions
+      (they should not be specific to a single submission). for each weakness,
+      succinctly describe it and give a list of quotes from the reviews from
+      different submissions that serve as evidence for that weakness. find as
+      many common weaknesses as possible.
+    output:
+      schema:
+        weaknesses: 'list[{weakness_shortname: string, quotes: string}]'
+  - type: unnest
+    name: unnest_weaknesses
+    unnest_key: weaknesses
+    recursive: true
+  - type: resolve
+    name: canonicalize_weaknesses
+    output:
+      schema:
+        weakness_shortname: string
+    comparison_prompt: >-
+      you are comparing two types of weaknesses described in AI paper reviews.
+      please determine if these two weakness types should be grouped together
+      because they are essentially the same:
+
+
+      weakness 1: {{ input1.weakness_shortname }}
+
+      quotes to support weakness 1: {{ input1.quotes }}
+
+      weakness 2: {{ input2.weakness_shortname }}
+
+      quotes to support weakness 2: {{ input2.quotes }}
+
+
+      if the quotes mention the same idea, these two weaknesses should be merged
+      together.
+    resolution_prompt: >-
+      you are comparing two types of weaknesses described in AI paper reviews.
+      determine a canonical name for the weakness type for the following
+      weakness types:
+
+
+      {% for input in inputs %}
+
+      Weakness: {{ input.weakness_shortname }}
+
+      {% endfor %}
+
+
+      the canonicalized weakness should be 4-5 words at most.
+    model: gpt-4o-mini
+    blocking_keys:
+      - weakness_shortname
+    blocking_threshold: 0.5263
+    embedding_model: text-embedding-3-small
+  - type: reduce
+    name: summarize_weakness
+    prompt: >-
+      you are analyzing weaknesses stated in AI paper reviews. for the weakness
+      {{ reduce_key }}, here are many of the quotes from reviews that correspond
+      to it:
+
+
+      {% for input in inputs %}
+
+      Quotes: {{ input.quotes }}
+
+      {% endfor %}
+
+
+      Based on these quotes, summarize why the submissions exhibited this
+      weakness. Include quotes in your summary.
+    output:
+      schema:
+        summary: string
+    reduce_key:
+      - weakness_shortname
+pipeline:
+  steps:
+    - name: data_processing
+      input: input
+      operations:
+        - extract_weaknesses
+        - unnest_weaknesses
+        - canonicalize_weaknesses
+        - summarize_weakness
+  output:
+    type: file
+    path: /Users/shreyashankar/Documents/hacking/docetl-examples/iclr-2024-reviews/output.json
+    intermediate_dir: /Users/shreyashankar/Documents/hacking/docetl-examples/iclr-2024-reviews/intermediate
