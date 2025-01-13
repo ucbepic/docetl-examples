@@ -2,9 +2,9 @@
 
 This repository contains examples of DocETL pipelines. Currently, it includes:
 
-## ICLR 2024 Review Analysis
+## ICLR Review Analysis
 
-Analyzes reviews from ICLR 2024 conference submissions to identify common themes in reviewer feedback, particularly focusing on strengths and weaknesses mentioned across papers.
+Analyzes reviews from ICLR conference submissions to identify common themes in reviewer feedback, particularly focusing on strengths and weaknesses mentioned across papers.
 
 ### Data
 

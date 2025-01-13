@@ -101,5 +101,5 @@ pipeline:
         - summarize_weakness
   output:
     type: file
-    path: /Users/shreyashankar/Documents/hacking/docetl-examples/iclr-2024-reviews/output.json
-    intermediate_dir: /Users/shreyashankar/Documents/hacking/docetl-examples/iclr-2024-reviews/intermediate
+    path: /Users/shreyashankar/Documents/hacking/docetl-examples/iclr-reviews/output.json
+    intermediate_dir: /Users/shreyashankar/Documents/hacking/docetl-examples/iclr-reviews/intermediate
