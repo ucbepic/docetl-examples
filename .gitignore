@@ -1,3 +1,4 @@
 *.env
 *optimizer_output*
 *.ipynb
+*sec_8k_filings*
